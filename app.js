@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const express = require("express");
 const db = require("./models");
+const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
 
@@ -13,6 +14,9 @@ app.get("/", (req, res) => {
         message: "ResumeFlow v2 API is running 🚀"
     });
 });
+
+app.use("/api/auth", require("./routes/auth"));
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 

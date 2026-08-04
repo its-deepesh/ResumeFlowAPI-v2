@@ -1,7 +1,7 @@
 'use strict';
-const {
-  Model
-} = require('sequelize');
+const { Model } = require('sequelize');
+const bcrypt = require('bcrypt');
+
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     /**
@@ -52,15 +52,28 @@ module.exports = (sequelize, DataTypes) => {
     timestamps: true,
     underscored: true,
     hooks: {
-      beforeCreate: normalizeEmail,
-      beforeUpdate: normalizeEmail
+      beforeCreate: prepareUser,
+      beforeUpdate: prepareUser
     }
   });
   return User;
 };
 
+async function prepareUser(user) {
+  normalizeEmail(user);
+  if (user.changed("password")) {
+    await hashPassword(user);
+  }
+}
+
 function normalizeEmail(user) {
   if (user.email) {
     user.email = user.email.toLowerCase().trim();
   }
+}
+
+const SALT_ROUNDS = 10;
+
+async function hashPassword(user) {
+  user.password = await bcrypt.hash(user.password, SALT_ROUNDS);
 }
