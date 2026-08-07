@@ -22,7 +22,7 @@ const authenticateUser = async (req, res, next) => {
                 message: "User not found"
             });
         }
-        req.user = decodedToken;
+        req.user = user;
         next();
     } catch (error) {
         next(error);
