@@ -1,170 +1,196 @@
-# ResumeFlow v2
+# ResumeFlow v2 API 🚀
 
-ResumeFlow v2 is a RESTful Resume Builder API built with **Node.js**, **Express.js**, **MySQL**, and **Sequelize ORM**.
+A RESTful backend API for building and managing resumes, developed using **Node.js**, **Express.js**, **MySQL**, and **Sequelize ORM**.
 
-This project is a complete rebuild of the original ResumeFlow internship project. Unlike the first version, which used a JSON file as the database, ResumeFlow v2 uses MySQL with Sequelize to provide a scalable and production-ready backend architecture.
-
----
-
-## 🚀 Current Progress
-
-### Completed
-
-- Project initialization
-- Express server setup
-- Sequelize ORM configuration
-- MySQL database connection
-- Environment variable configuration using `dotenv`
-- User model creation
-- User migration
-- Database migration execution
-- User model validations
-- Email normalization using Sequelize Hooks
-
-### In Progress
-
-- Authentication Module
-
-### Planned
-
-- Documents
-- Sections
-- Items
-- Versions
-- Templates
-- AI Mock APIs
-- Job Applications
+The project follows a modular architecture with secure authentication, user management, and resume management. It is designed to be scalable so additional modules like Education, Experience, Skills, Projects, and Certifications can be added easily.
 
 ---
 
-# 🛠️ Tech Stack
+## ✨ Features
+
+### 🔐 Authentication
+- User Registration
+- User Login
+- JWT Authentication
+- Password Hashing with bcrypt
+- Protected Routes
+- User Logout
+
+### 👤 User Management
+- Get Profile
+- Update Profile
+- Delete Account
+
+### 📄 Resume Management
+- Create Resume
+- Get All User Resumes
+- Get Resume by ID
+- Update Resume
+- Delete Resume
+
+### 🛡️ Security
+- JWT Authorization
+- Password Hashing
+- Protected APIs
+- Resource Ownership Verification
+- Secure CRUD Operations
+- Email Normalization
+- Model Validations
+
+---
+
+# 🏗️ Tech Stack
 
 - Node.js
 - Express.js
 - MySQL
 - Sequelize ORM
+- JWT (jsonwebtoken)
+- bcryptjs
 - dotenv
-- Nodemon
-- Sequelize CLI
 
 ---
 
 # 📁 Project Structure
 
 ```
-ResumeFlow-v2/
+ResumeFlow_v2
 │
 ├── config/
+│   └── config.js
+│
 ├── controllers/
+│   ├── authController.js
+│   ├── userController.js
+│   └── resumeController.js
+│
 ├── middleware/
+│   ├── authenticateUser.js
+│   └── errorHandler.js
+│
 ├── migrations/
+│
 ├── models/
+│   ├── index.js
+│   ├── user.js
+│   └── resume.js
+│
 ├── routes/
-├── seeders/
-├── services/
-├── validations/
-├── utils/
+│   ├── auth.js
+│   ├── users.js
+│   └── resumes.js
 │
 ├── .env
-├── .gitignore
 ├── app.js
-├── package.json
-└── README.md
+└── package.json
 ```
 
 ---
 
-# 🗄️ Database
+# 🗄️ Database Design
 
-## Current Tables
+## Users
 
-- users
-- SequelizeMeta
-
----
-
-# 👤 User Model
-
-| Field | Type | Description |
-|------|------|-------------|
-| id | INTEGER | Primary Key |
-| name | STRING | User's full name |
-| email | STRING | Unique email address |
-| password | STRING | Hashed password *(coming next)* |
-| created_at | DATE | Record creation timestamp |
-| updated_at | DATE | Record update timestamp |
+| Field | Type |
+|--------|------|
+| id | INTEGER |
+| name | STRING |
+| email | STRING |
+| password | STRING |
+| created_at | DATE |
+| updated_at | DATE |
 
 ---
 
-# ✅ Model Features
+## Resumes
 
-### User Model
-
-- Name validation
-- Email validation
-- Password validation
-- Unique email constraint
-- Email normalization hook
-- Automatic timestamps
-- Snake case database columns
+| Field | Type |
+|--------|------|
+| id | INTEGER |
+| user_id | INTEGER (FK) |
+| title | STRING |
+| template | STRING |
+| created_at | DATE |
+| updated_at | DATE |
 
 ---
 
-# 📌 Development Workflow
-
-Every feature in ResumeFlow v2 follows this workflow:
+# 🔗 Relationships
 
 ```
-Requirement
-        ↓
-Database Design
-        ↓
-ER Diagram
-        ↓
-Migration
-        ↓
-Model
-        ↓
-Validation
-        ↓
-Hooks
-        ↓
-Controller
-        ↓
-Routes
-        ↓
-Testing
-        ↓
-Git Commit
+User
+ │
+ │ hasMany
+ ▼
+Resume
+
+Resume
+ │
+ │ belongsTo
+ ▼
+User
 ```
 
 ---
 
-# 🔜 Upcoming Modules
+# 📌 API Endpoints
 
-- Authentication
-- Documents
-- Sections
-- Items
-- Versions
-- Templates
-- AI Mock APIs
-- Applications
+## Authentication
+
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| POST | `/api/auth/register` | Register User |
+| POST | `/api/auth/login` | Login User |
+| POST | `/api/auth/logout` | Logout User |
 
 ---
 
-# ⚙️ Installation
+## Users
+
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| GET | `/api/users/profile` | Get Profile |
+| PUT | `/api/users/profile` | Update Profile |
+| DELETE | `/api/users/profile` | Delete Account |
+
+---
+
+## Resumes
+
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| POST | `/api/resumes` | Create Resume |
+| GET | `/api/resumes` | Get All Resumes |
+| GET | `/api/resumes/:id` | Get Resume by ID |
+| PUT | `/api/resumes/:id` | Update Resume |
+| DELETE | `/api/resumes/:id` | Delete Resume |
+
+---
+
+# 🔐 Authentication
+
+Protected routes require a JWT token.
+
+Example:
+
+```
+Authorization: Bearer <JWT_TOKEN>
+```
+
+---
+
+# 📦 Installation
 
 Clone the repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/its-deepesh/ResumeFlowAPI-v2.git
 ```
 
-Move into the project directory
+Go into the project
 
 ```bash
-cd ResumeFlow-v2
+cd ResumeFlowAPI-v2
 ```
 
 Install dependencies
@@ -173,16 +199,14 @@ Install dependencies
 npm install
 ```
 
-Configure environment variables
-
-Create a `.env` file.
+Create a `.env` file
 
 ```env
 PORT=3000
 
 DB_HOST=localhost
 DB_USER=root
-DB_PASSWORD=your_password
+DB_PASSWORD=YOUR_PASSWORD
 DB_NAME=resumeflow_v2
 
 JWT_SECRET=your_secret_key
@@ -195,35 +219,102 @@ Run migrations
 npx sequelize-cli db:migrate
 ```
 
-Start the development server
+Start the server
 
 ```bash
-npm run dev
+npm start
+```
+
+or
+
+```bash
+node app.js
 ```
 
 ---
 
-# 🎯 Project Goals
+# 🛡️ Security Features
 
-- Learn production-level backend development.
-- Replace JSON-based storage with MySQL and Sequelize.
-- Build scalable REST APIs using the MVC architecture.
-- Implement authentication and authorization using JWT.
-- Apply database normalization and model associations.
-- Follow clean code and Git best practices.
-
----
-
-# 📈 Project Status
-
-**Current Version:** v2.0.0
-
-**Status:** 🚧 Under Development
+- Passwords are hashed before storing.
+- JWT-based authentication.
+- Protected routes using middleware.
+- Users can only access their own resumes.
+- Resource ownership verification.
+- Foreign key constraints.
+- Cascade delete between User and Resume.
 
 ---
 
-## 👨‍💻 Author
+# 📈 Current Progress
+
+## ✅ Completed
+
+### Authentication Module
+- [x] Register
+- [x] Login
+- [x] Logout
+- [x] JWT Authentication
+- [x] Password Hashing
+- [x] Authentication Middleware
+
+### User Module
+- [x] Get Profile
+- [x] Update Profile
+- [x] Delete Account
+
+### Resume Module
+- [x] Create Resume
+- [x] Get All Resumes
+- [x] Get Resume by ID
+- [x] Update Resume
+- [x] Delete Resume
+
+---
+
+## 🚧 Upcoming Modules
+
+- Education
+- Experience
+- Projects
+- Skills
+- Certifications
+- AI Resume Suggestions (Mock API)
+- Resume Templates
+- Resume Import
+- Resume Export
+
+---
+
+# 📚 Concepts Implemented
+
+- REST API Design
+- MVC Architecture
+- Sequelize ORM
+- Model Validations
+- Sequelize Hooks
+- Database Migrations
+- One-to-Many Associations
+- JWT Authentication
+- Authorization
+- Password Hashing
+- Error Handling Middleware
+- Environment Variables
+- Secure CRUD Operations
+- Foreign Keys
+- Cascade Delete
+
+---
+
+# 👨‍💻 Author
 
 **Deepesh Singh**
 
-Built as part of backend development learning and internship using **Node.js**, **Express.js**, **MySQL**, and **Sequelize ORM**.
+GitHub: https://github.com/its-deepesh
+
+---
+
+## ⭐ Project Status
+
+**ResumeFlow v2** is actively under development.
+
+Current version includes a complete Authentication, User Management, and Resume Management system. Upcoming releases will focus on Education, Experience, Projects, Skills, Certifications, and AI-powered resume features.
