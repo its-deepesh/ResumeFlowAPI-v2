@@ -115,21 +115,38 @@ ResumeFlow_v2
 
 ---
 
-# 🔗 Relationships
 
-```
-User
- │
- │ hasMany
- ▼
-Resume
+# 🗂️ Entity Relationship Diagram
 
-Resume
- │
- │ belongsTo
- ▼
-User
+```mermaid
+erDiagram
+    USERS ||--o{ RESUMES : "has many"
+
+    USERS {
+        INT id PK
+        VARCHAR name
+        VARCHAR email UK
+        VARCHAR password
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    RESUMES {
+        INT id PK
+        INT user_id FK
+        VARCHAR title
+        VARCHAR template
+        DATETIME created_at
+        DATETIME updated_at
+    }
 ```
+
+### Relationship
+
+- One **User** can have many **Resumes**.
+- Each **Resume** belongs to exactly one **User**.
+- `resumes.user_id` is a foreign key referencing `users.id`.
+- Deleting a user cascades to their resumes.
 
 ---
 
