@@ -70,7 +70,7 @@ const getResumeById = async (req, res, next) => {
             message: "Resume fetched successfully",
             data: resume
         });
-        
+
     }
     catch (error) {
         next(error);
@@ -143,4 +143,78 @@ const deleteResume = async (req, res, next) => {
     }
 }
 
-module.exports = { createResume, getAllResumes, getResumeById, updateResume, deleteResume };
+const importResume = async (req, res, next) => {
+    try {
+        const { source, data } = req.body;
+        const userId = req.user.id;
+
+        if (!["linkedin", "file"].includes(source)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid import source"
+            });
+        }
+
+        const { title, template } = data;
+
+        const resume = await Resume.create({
+            userId,
+            title,
+            template
+        });
+
+        return res.status(201).json({
+            success: true,
+            message: "Resume imported successfully",
+            data: {
+                id: resume.id,
+                title: resume.title,
+                template: resume.template,
+                userId: resume.userId
+            }
+        });
+    }
+    catch (error) {
+        next(error);
+    }
+}
+
+const duplicateResume = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+
+        const resume = await Resume.findOne({
+            where: { id, userId }
+        });
+
+        if (!resume) {
+            return res.status(404).json({
+                success: false,
+                message: "Resume not found"
+            });
+        }
+
+        const newResume = await Resume.create({
+            userId,
+            title: `${resume.title} - Copy`,
+            template: resume.template
+        });
+
+        return res.status(201).json({
+            success: true,
+            message: "Resume duplicated successfully",
+            data: {
+                id: newResume.id,
+                title: newResume.title,
+                template: newResume.template,
+                userId: newResume.userId
+            }
+        });
+    }
+    catch (error) {
+        next(error);
+    }
+}
+
+module.exports = { createResume, getAllResumes, getResumeById, updateResume, deleteResume, importResume, duplicateResume };

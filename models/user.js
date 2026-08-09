@@ -47,7 +47,15 @@ module.exports = (sequelize, DataTypes) => {
           msg: "Password must be at least 8 characters long",
         }
       }
-    }
+    },
+    resetPasswordToken: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    resetPasswordExpires: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
   }, {
     sequelize,
     modelName: 'User',

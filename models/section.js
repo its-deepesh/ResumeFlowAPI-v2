@@ -3,62 +3,58 @@ const {
   Model
 } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class Resume extends Model {
+  class Section extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      Resume.belongsTo(models.User, {
-        foreignKey: 'userId',
-        as: 'user',
-      })
-
-      Resume.hasMany(models.Section, {
+      // define association here
+      Section.belongsTo(models.Resume, {
         foreignKey: 'resumeId',
-        as: 'sections'
-      })
+        as: 'resume'
+      });
 
-      Resume.hasMany(models.Version, {
-        foreignKey: 'resumeId',
-        as: 'versions'
+      Section.hasMany(models.Item, {
+        foreignKey: "sectionId",
+        as: "items"
       })
     }
   }
-  Resume.init({
-    userId: {
+  Section.init({
+    resumeId: {
       type: DataTypes.INTEGER,
-      allowNull: false
+      allowNull: false,
     },
-    title: {
+    name: {
       type: DataTypes.STRING,
       allowNull: false,
       validate: {
         notEmpty: true,
         len: {
           args: [2, 100],
-          msg: "Title must be between 2 and 100 characters"
+          msg: "Section name must be between 2 and 100 characters"
         }
       }
     },
-    template: {
-      type: DataTypes.STRING,
+    position: {
+      type: DataTypes.INTEGER,
       allowNull: false,
       validate: {
-        notEmpty: true,
-        len: {
-          args: [2, 100],
-          msg: "Template must be between 2 and 100 characters"
+        isInt: true,
+        min: {
+          args: [1],
+          msg: "Position must be at least 1"
         }
       }
     }
   }, {
     sequelize,
-    modelName: 'Resume',
-    tableName: 'resumes',
+    modelName: 'Section',
+    tableName: 'sections',
     timestamps: true,
     underscored: true
   });
-  return Resume;
+  return Section;
 };

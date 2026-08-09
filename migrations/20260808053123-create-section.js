@@ -2,29 +2,29 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('resumes', {
+    await queryInterface.createTable('sections', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      user_id: {
+      resume_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: "users",
+          model: "resumes",
           key: "id"
         },
         onDelete: "CASCADE",
         onUpdate: "CASCADE"
       },
-      title: {
+      name: {
         type: Sequelize.STRING,
         allowNull: false,
       },
-      template: {
-        type: Sequelize.STRING,
+      position: {
+        type: Sequelize.INTEGER,
         allowNull: false,
       },
       created_at: {
@@ -38,6 +38,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('resumes');
+    await queryInterface.dropTable('sections');
   }
 };

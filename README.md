@@ -1,320 +1,315 @@
-# ResumeFlow v2 API 🚀
+# ResumeFlow API
 
-A RESTful backend API for building and managing resumes, developed using **Node.js**, **Express.js**, **MySQL**, and **Sequelize ORM**.
+ResumeFlow is a RESTful backend API for building, managing, importing, duplicating, versioning, and restoring resumes.
 
-The project follows a modular architecture with secure authentication, user management, and resume management. It is designed to be scalable so additional modules like Education, Experience, Skills, Projects, and Certifications can be added easily.
+Built with **Node.js, Express.js, Sequelize, and MySQL**.
 
----
+> **Current status:** Core authentication, users, resumes, sections, items, and versions APIs are implemented and tested. Templates and AI are next.
 
-## ✨ Features
-
-### 🔐 Authentication
-- User Registration
-- User Login
-- JWT Authentication
-- Password Hashing with bcrypt
-- Protected Routes
-- User Logout
-
-### 👤 User Management
-- Get Profile
-- Update Profile
-- Delete Account
-
-### 📄 Resume Management
-- Create Resume
-- Get All User Resumes
-- Get Resume by ID
-- Update Resume
-- Delete Resume
-
-### 🛡️ Security
-- JWT Authorization
-- Password Hashing
-- Protected APIs
-- Resource Ownership Verification
-- Secure CRUD Operations
-- Email Normalization
-- Model Validations
-
----
-
-# 🏗️ Tech Stack
+## Tech Stack
 
 - Node.js
 - Express.js
-- MySQL
 - Sequelize ORM
-- JWT (jsonwebtoken)
-- bcryptjs
-- dotenv
+- MySQL
+- JWT authentication
+- bcrypt password hashing
+- REST API
+- Postman
 
----
+## Database Design
 
-# 📁 Project Structure
-
-```
-ResumeFlow_v2
-│
-├── config/
-│   └── config.js
-│
-├── controllers/
-│   ├── authController.js
-│   ├── userController.js
-│   └── resumeController.js
-│
-├── middleware/
-│   ├── authenticateUser.js
-│   └── errorHandler.js
-│
-├── migrations/
-│
-├── models/
-│   ├── index.js
-│   ├── user.js
-│   └── resume.js
-│
-├── routes/
-│   ├── auth.js
-│   ├── users.js
-│   └── resumes.js
-│
-├── .env
-├── app.js
-└── package.json
-```
-
----
-
-# 🗄️ Database Design
-
-## Users
-
-| Field | Type |
-|--------|------|
-| id | INTEGER |
-| name | STRING |
-| email | STRING |
-| password | STRING |
-| created_at | DATE |
-| updated_at | DATE |
-
----
-
-## Resumes
-
-| Field | Type |
-|--------|------|
-| id | INTEGER |
-| user_id | INTEGER (FK) |
-| title | STRING |
-| template | STRING |
-| created_at | DATE |
-| updated_at | DATE |
-
----
-
-# 🔗 Relationships
-
-```
+```text
 User
  │
- │ hasMany
- ▼
-Resume
-
-Resume
- │
- │ belongsTo
- ▼
-User
+ └──< Resume
+       │
+       ├──< Section
+       │      └──< Item
+       │
+       └──< Version
 ```
 
----
+### Relationships
 
-# 📌 API Endpoints
+- User → many Resumes
+- Resume → many Sections
+- Section → many Items
+- Resume → many Versions
+
+### ER Diagram
+
+```mermaid
+erDiagram
+    USER ||--o{ RESUME : owns
+    RESUME ||--o{ SECTION : contains
+    SECTION ||--o{ ITEM : contains
+    RESUME ||--o{ VERSION : stores
+
+    USER {
+        int id PK
+        string name
+        string email UK
+        string password
+        string reset_password_token
+        datetime reset_password_expires
+        datetime created_at
+        datetime updated_at
+    }
+
+    RESUME {
+        int id PK
+        int user_id FK
+        string title
+        string template
+        datetime created_at
+        datetime updated_at
+    }
+
+    SECTION {
+        int id PK
+        int resume_id FK
+        string name
+        int position
+        datetime created_at
+        datetime updated_at
+    }
+
+    ITEM {
+        int id PK
+        int section_id FK
+        json content
+        int position
+        datetime created_at
+        datetime updated_at
+    }
+
+    VERSION {
+        int id PK
+        int resume_id FK
+        int version_number
+        json snapshot
+        datetime created_at
+        datetime updated_at
+    }
+```
 
 ## Authentication
 
-| Method | Endpoint | Description |
-|---------|----------|-------------|
-| POST | `/api/auth/register` | Register User |
-| POST | `/api/auth/login` | Login User |
-| POST | `/api/auth/logout` | Logout User |
+Authentication uses JWT.
 
----
+Protected requests use:
 
-## Users
-
-| Method | Endpoint | Description |
-|---------|----------|-------------|
-| GET | `/api/users/profile` | Get Profile |
-| PUT | `/api/users/profile` | Update Profile |
-| DELETE | `/api/users/profile` | Delete Account |
-
----
-
-## Resumes
-
-| Method | Endpoint | Description |
-|---------|----------|-------------|
-| POST | `/api/resumes` | Create Resume |
-| GET | `/api/resumes` | Get All Resumes |
-| GET | `/api/resumes/:id` | Get Resume by ID |
-| PUT | `/api/resumes/:id` | Update Resume |
-| DELETE | `/api/resumes/:id` | Delete Resume |
-
----
-
-# 🔐 Authentication
-
-Protected routes require a JWT token.
-
-Example:
-
-```
-Authorization: Bearer <JWT_TOKEN>
+```text
+Authorization: Bearer <token>
 ```
 
----
+Passwords are hashed using bcrypt through Sequelize model hooks.
 
-# 📦 Installation
+## API Endpoints
 
-Clone the repository
+### Authentication
 
-```bash
-git clone https://github.com/its-deepesh/ResumeFlowAPI-v2.git
+| Method | Endpoint | Purpose |
+|---|---|---|
+| POST | `/api/auth/register` | Register a user |
+| POST | `/api/auth/login` | Login and receive JWT |
+| POST | `/api/auth/logout` | Logout |
+| POST | `/api/auth/forgot-password` | Generate password reset token |
+| POST | `/api/auth/reset-password` | Reset password using token |
+
+Forgot-password tokens expire after **1 hour**. For this internship implementation, the token is returned directly for testing instead of being sent by email.
+
+### Users
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | `/api/users` | Get all users |
+| GET | `/api/users/profile` | Get current user profile |
+| GET | `/api/users/profile/:id` | Get user by ID |
+| PUT | `/api/users/profile` | Update current user profile |
+
+### Resumes
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| POST | `/api/resumes` | Create a resume |
+| GET | `/api/resumes` | Get all resumes for current user |
+| GET | `/api/resumes/:id` | Get a resume |
+| PUT | `/api/resumes/:id` | Update a resume |
+| DELETE | `/api/resumes/:id` | Delete a resume |
+| POST | `/api/resumes/import` | Import/create a resume from parsed data |
+| POST | `/api/resumes/:id/duplicate` | Duplicate a resume |
+
+**Import:** supports the mock sources `linkedin` and `file`. The imported resume belongs to the authenticated user.
+
+**Duplicate:** creates a new resume with `Original Title - Copy`, copies the template, and does not copy sections/items or versions.
+
+### Sections
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| POST | `/api/resumes/:resumeId/sections` | Create a section |
+| GET | `/api/resumes/:resumeId/sections` | Get all sections |
+| PATCH | `/api/resumes/:resumeId/sections/:sectionId` | Update/reorder a section |
+| DELETE | `/api/resumes/:resumeId/sections/:sectionId` | Delete a section |
+
+Sections use `position` for ordering.
+
+### Items
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| POST | `/api/resumes/:resumeId/sections/:sectionId/items` | Create an item |
+| PATCH | `/api/resumes/:resumeId/sections/:sectionId/items/:itemId` | Update/reorder an item |
+| DELETE | `/api/resumes/:resumeId/sections/:sectionId/items/:itemId` | Delete an item |
+
+Each Item contains JSON `content` and a `position`.
+
+### Versions
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| POST | `/api/resumes/:resumeId/versions` | Save a version |
+| GET | `/api/resumes/:resumeId/versions` | List saved versions |
+| POST | `/api/resumes/:resumeId/versions/:versionId/restore` | Restore a saved version |
+
+Version numbers are generated by the server and are unique per Resume.
+
+The current restore implementation restores the saved Resume `title` and `template` without automatically creating another version.
+
+## Validation & Authorization
+
+Nested resources follow the ownership chain:
+
+```text
+Authenticated User
+       ↓
+     Resume
+       ↓
+    Section
+       ↓
+      Item
 ```
 
-Go into the project
+This prevents users from accessing another user's nested resources by changing IDs.
 
-```bash
-cd ResumeFlowAPI-v2
+Common responses:
+
+- `200 OK` — successful request
+- `201 Created` — resource created
+- `400 Bad Request` — invalid request
+- `401 Unauthorized` — authentication/token problem
+- `404 Not Found` — resource not found
+- `409 Conflict` — duplicate/conflicting resource
+
+## Environment Variables
+
+Create `.env`:
+
+```env
+PORT=3000
+
+DB_NAME=your_database
+DB_USER=your_mysql_user
+DB_PASSWORD=your_mysql_password
+DB_HOST=localhost
+DB_DIALECT=mysql
+
+JWT_SECRET=your_secret
+JWT_EXPIRES_IN=1d
 ```
 
-Install dependencies
+Do not commit `.env`.
+
+## Installation
 
 ```bash
 npm install
 ```
 
-Create a `.env` file
-
-```env
-PORT=3000
-
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=YOUR_PASSWORD
-DB_NAME=resumeflow_v2
-
-JWT_SECRET=your_secret_key
-JWT_EXPIRES_IN=7d
-```
-
-Run migrations
+Run migrations:
 
 ```bash
 npx sequelize-cli db:migrate
 ```
 
-Start the server
+Start the server:
 
 ```bash
 npm start
 ```
 
-or
+The API typically runs at:
 
-```bash
-node app.js
+```text
+http://localhost:3000
 ```
 
----
+## Testing
 
-# 🛡️ Security Features
+APIs have been tested using Postman.
 
-- Passwords are hashed before storing.
-- JWT-based authentication.
-- Protected routes using middleware.
-- Users can only access their own resumes.
-- Resource ownership verification.
-- Foreign key constraints.
-- Cascade delete between User and Resume.
+Recommended order:
 
----
+```text
+Register
+   ↓
+Login
+   ↓
+Copy JWT
+   ↓
+Users
+   ↓
+Resumes
+   ↓
+Sections
+   ↓
+Items
+   ↓
+Versions
+   ↓
+Forgot Password
+   ↓
+Reset Password
+```
 
-# 📈 Current Progress
+For protected endpoints, use Postman's **Authorization → Bearer Token** with the JWT returned by Login.
 
-## ✅ Completed
+## Project Status
 
-### Authentication Module
-- [x] Register
-- [x] Login
-- [x] Logout
-- [x] JWT Authentication
-- [x] Password Hashing
-- [x] Authentication Middleware
+| Module | Status |
+|---|---|
+| Authentication | Complete |
+| Users | Complete |
+| Resumes | Complete |
+| Sections | Complete |
+| Items | Complete |
+| Versions | Complete |
+| Templates | Next |
+| AI | Planned |
 
-### User Module
-- [x] Get Profile
-- [x] Update Profile
-- [x] Delete Account
+## Internship Scope
 
-### Resume Module
-- [x] Create Resume
-- [x] Get All Resumes
-- [x] Get Resume by ID
-- [x] Update Resume
-- [x] Delete Resume
+The project follows the specified internship API scope and avoids unnecessary features.
 
----
+Completed functionality includes:
 
-## 🚧 Upcoming Modules
+- JWT authentication
+- Password hashing
+- Password reset
+- User management
+- Resume CRUD
+- Resume import
+- Resume duplication
+- Nested sections
+- Nested items
+- Resume versioning
+- Version restore
+- Sequelize relationships
+- MySQL persistence
+- Postman API testing
 
-- Education
-- Experience
-- Projects
-- Skills
-- Certifications
-- AI Resume Suggestions (Mock API)
-- Resume Templates
-- Resume Import
-- Resume Export
+## License
 
----
-
-# 📚 Concepts Implemented
-
-- REST API Design
-- MVC Architecture
-- Sequelize ORM
-- Model Validations
-- Sequelize Hooks
-- Database Migrations
-- One-to-Many Associations
-- JWT Authentication
-- Authorization
-- Password Hashing
-- Error Handling Middleware
-- Environment Variables
-- Secure CRUD Operations
-- Foreign Keys
-- Cascade Delete
-
----
-
-# 👨‍💻 Author
-
-**Deepesh Singh**
-
-GitHub: https://github.com/its-deepesh
-
----
-
-## ⭐ Project Status
-
-**ResumeFlow v2** is actively under development.
-
-Current version includes a complete Authentication, User Management, and Resume Management system. Upcoming releases will focus on Education, Experience, Projects, Skills, Certifications, and AI-powered resume features.
+Developed for educational/internship purposes.
