@@ -19,6 +19,7 @@ Built with **Node.js, Express.js, Sequelize, and MySQL**.
 
 ## Database Design
 
+<<<<<<< HEAD
 ```text
 User
  │
@@ -31,6 +32,106 @@ User
 ```
 
 ### Relationships
+=======
+# 📁 Project Structure
+
+```
+ResumeFlow_v2
+│
+├── config/
+│   └── config.js
+│
+├── controllers/
+│   ├── authController.js
+│   ├── userController.js
+│   └── resumeController.js
+│
+├── middleware/
+│   ├── authenticateUser.js
+│   └── errorHandler.js
+│
+├── migrations/
+│
+├── models/
+│   ├── index.js
+│   ├── user.js
+│   └── resume.js
+│
+├── routes/
+│   ├── auth.js
+│   ├── users.js
+│   └── resumes.js
+│
+├── .env
+├── app.js
+└── package.json
+```
+
+---
+
+# 🗄️ Database Design
+
+## Users
+
+| Field | Type |
+|--------|------|
+| id | INTEGER |
+| name | STRING |
+| email | STRING |
+| password | STRING |
+| created_at | DATE |
+| updated_at | DATE |
+
+---
+
+## Resumes
+
+| Field | Type |
+|--------|------|
+| id | INTEGER |
+| user_id | INTEGER (FK) |
+| title | STRING |
+| template | STRING |
+| created_at | DATE |
+| updated_at | DATE |
+
+---
+
+
+# 🗂️ Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    USERS ||--o{ RESUMES : "has many"
+
+    USERS {
+        INT id PK
+        VARCHAR name
+        VARCHAR email UK
+        VARCHAR password
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    RESUMES {
+        INT id PK
+        INT user_id FK
+        VARCHAR title
+        VARCHAR template
+        DATETIME created_at
+        DATETIME updated_at
+    }
+```
+
+### Relationship
+
+- One **User** can have many **Resumes**.
+- Each **Resume** belongs to exactly one **User**.
+- `resumes.user_id` is a foreign key referencing `users.id`.
+- Deleting a user cascades to their resumes.
+
+---
+>>>>>>> 391470b8a6e79a0d40c922a7188cfc5b9d1bcc08
 
 - User → many Resumes
 - Resume → many Sections
