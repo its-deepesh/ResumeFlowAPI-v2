@@ -1,866 +1,979 @@
 # ResumeFlow 🚀
 
-> A modular, authenticated REST API for building, managing, importing, duplicating, versioning, and restoring resumes.
+> A production-style resume management REST API built with Node.js,
+> Express.js, Sequelize, and MySQL.
 
-ResumeFlow is a backend project built with **Node.js, Express.js, Sequelize, and MySQL**. The project is designed around a hierarchical resume model where users own resumes, resumes contain sections, sections contain items, and resumes can have saved versions for recovery and rollback.
+[![Node.js](https://img.shields.io/badge/Node.js-Backend-green?logo=node.js)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express.js-REST%20API-black?logo=express)](https://expressjs.com/)
+[![Sequelize](https://img.shields.io/badge/Sequelize-ORM-52B0E7?logo=sequelize)](https://sequelize.org/)
+[![MySQL](https://img.shields.io/badge/MySQL-Database-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![JWT](https://img.shields.io/badge/Auth-JWT-purple)](https://jwt.io/)
+[![bcrypt](https://img.shields.io/badge/Passwords-bcrypt-orange)](https://www.npmjs.com/package/bcrypt)
+[![Postman](https://img.shields.io/badge/Tested%20with-Postman-orange?logo=postman)](https://www.postman.com/)
 
-## ✨ Project Highlights
+## Overview
 
-- 🔐 JWT-based authentication
-- 🔑 Secure password hashing with bcrypt
-- 🔄 Forgot-password and reset-password flow
-- 👤 User profile management
-- 📄 Resume CRUD operations
-- 📥 Resume import workflow
-- 📋 Resume duplication
-- 🧩 Nested resume sections
-- 📝 Nested resume items
-- 🕐 Resume version history
-- ↩️ Version restoration / rollback
-- 🛡️ Parent-resource ownership checks
-- 🗄️ MySQL persistence through Sequelize ORM
-- 🔗 Foreign-key relationships with cascading behavior
-- ✅ Model/request validation
-- 🧪 API testing through Postman
-- 📦 Sequelize migrations
-- 📚 Structured REST API design
+**ResumeFlow** is a modular backend for creating, managing, versioning,
+importing, duplicating, and improving resumes while also tracking job
+applications.
 
----
+It was designed to demonstrate real backend engineering rather than
+isolated CRUD exercises. The project includes authentication,
+authorization, nested resource ownership, relational database design,
+migrations, seeders, validation, version snapshots and rollback,
+reusable templates, an AI service abstraction, and a job application
+tracker.
+
+### Core architecture
+
+``` text
+Client / Postman
+      │ HTTP + JSON
+      ▼
+Express Routes
+      │
+      ├── JWT Middleware
+      ▼
+Controllers
+      │
+      ├── validation
+      ├── ownership checks
+      └── business flow
+      ▼
+Services
+      │
+      ▼
+Sequelize Models
+      │
+      ▼
+MySQL
+```
+
+## ✨ Feature Highlights
+
+### Authentication & security
+
+-   User registration and login
+-   bcrypt password hashing
+-   JWT authentication
+-   Protected endpoints
+-   Resource ownership authorization
+-   Logout endpoint
+-   Forgot-password flow
+-   Cryptographically generated reset tokens
+-   Token expiration
+-   Password reset and token invalidation
+-   Email normalization
+-   Validation and consistent error responses
+
+### Resume management
+
+-   Resume CRUD
+-   Resume import
+-   Resume duplication
+-   Template assignment
+-   User-specific resume ownership
+
+### Structured resume builder
+
+``` text
+User
+ └── Resume
+      └── Section
+           └── Item
+```
+
+This supports sections such as Summary, Education, Experience, Skills,
+Projects, and Certifications.
+
+### Version management
+
+-   Create versions
+-   Automatic version numbering
+-   Version history
+-   JSON snapshots
+-   Restore previous versions
+-   Unique `(resume_id, version_number)` constraint
+-   Cascade deletion with parent resume
+
+### Templates
+
+Global reusable templates are stored in MySQL and configured through
+JSON.
+
+Seeded templates: - Modern - Classic - Minimal - Creative - Professional
+
+Example configuration:
+
+``` json
+{
+  "layout": "two-column",
+  "font": "Inter",
+  "primaryColor": "#000000",
+  "spacing": "comfortable"
+}
+```
+
+### AI-assisted resume tools
+
+The current implementation uses a mock AI service so the project can run
+without an external provider or API key.
+
+-   Bullet generation
+-   Professional summary generation
+-   Text rewriting
+-   General-purpose prompt processing
+
+The controller/service separation makes a real AI provider easy to
+integrate later.
+
+### Job application tracker
+
+Users can track: - Company - Job title - Job URL - Status - Notes -
+Application date
+
+Supported statuses:
+
+``` text
+applied
+interview
+offer
+rejected
+withdrawn
+```
+
+Every application is isolated to its authenticated owner.
+
+------------------------------------------------------------------------
 
 # 🏗️ Architecture
 
-```text
-                         ┌──────────────────────┐
-                         │       Client         │
-                         │ Postman / Frontend   │
-                         └──────────┬───────────┘
-                                    │
-                                    ▼
-                         ┌──────────────────────┐
-                         │      Express API     │
-                         │       Routes         │
-                         └──────────┬───────────┘
-                                    │
-                                    ▼
-                         ┌──────────────────────┐
-                         │     Middleware       │
-                         │ Auth / Validation    │
-                         └──────────┬───────────┘
-                                    │
-                                    ▼
-                         ┌──────────────────────┐
-                         │     Controllers      │
-                         │    Business Logic    │
-                         └──────────┬───────────┘
-                                    │
-                                    ▼
-                         ┌──────────────────────┐
-                         │      Sequelize       │
-                         │       Models         │
-                         └──────────┬───────────┘
-                                    │
-                                    ▼
-                         ┌──────────────────────┐
-                         │        MySQL         │
-                         │       Database       │
-                         └──────────────────────┘
+ResumeFlow follows a layered architecture:
+
+``` text
+Request
+  ↓
+Route
+  ↓
+Middleware
+  ↓
+Controller
+  ↓
+Service
+  ↓
+Sequelize Model
+  ↓
+MySQL
 ```
 
-The codebase separates:
+  Layer         Responsibility
+  ------------- -------------------------------------------
+  Routes        HTTP endpoint definitions
+  Middleware    Authentication and cross-cutting concerns
+  Controllers   Request/response orchestration
+  Services      Reusable business logic
+  Models        Schema, relationships, validation
+  Migrations    Database schema history
+  Seeders       Reproducible starter data
+  Database      Persistent state
 
-- **Routes** — endpoint definitions
-- **Middleware** — authentication and request processing
-- **Controllers** — API/business logic
-- **Models** — database entities and relationships
-- **Migrations** — version-controlled schema changes
-- **Database** — persistent application state
+This separation keeps controllers readable and makes business logic
+easier to test and replace.
 
----
+------------------------------------------------------------------------
 
-# 🧱 Project Structure
+# 📁 Project Structure
 
-```text
+``` text
 ResumeFlow/
-│
 ├── config/
-│
 ├── controllers/
 │   ├── authController.js
-│   ├── userController.js
 │   ├── resumeController.js
 │   ├── sectionController.js
 │   ├── itemController.js
-│   └── versionController.js
-│
+│   ├── versionController.js
+│   ├── templateController.js
+│   ├── aiController.js
+│   └── applicationController.js
 ├── middleware/
-│   ├── authentication middleware
-│   ├── validation middleware
-│   └── error handling
-│
 ├── migrations/
-│   ├── users
-│   ├── resumes
-│   ├── sections
-│   ├── items
-│   ├── versions
-│   └── password reset fields
-│
 ├── models/
 │   ├── user.js
 │   ├── resume.js
 │   ├── section.js
 │   ├── item.js
-│   └── version.js
-│
+│   ├── version.js
+│   ├── template.js
+│   └── application.js
 ├── routes/
 │   ├── auth.js
-│   ├── users.js
 │   ├── resumes.js
 │   ├── sections.js
 │   ├── items.js
-│   └── versions.js
-│
+│   ├── versions.js
+│   ├── templates.js
+│   ├── ai.js
+│   └── applications.js
+├── services/
+│   └── aiService.js
 ├── seeders/
-│
-├── .env
-├── .gitignore
+├── utils/
+├── models/index.js
 ├── app.js
 ├── package.json
+├── .env
 └── README.md
 ```
 
----
+------------------------------------------------------------------------
 
-# 🗃️ Data Model
+# 🗄️ Database Design
 
-ResumeFlow uses a hierarchical relational model:
-
-```text
-User
- │
- └───< Resume
-          │
-          ├───< Section
-          │        │
-          │        └───< Item
-          │
-          └───< Version
-```
-
-| Parent | Child | Relationship |
-|---|---|---|
-| User | Resume | One-to-Many |
-| Resume | Section | One-to-Many |
-| Section | Item | One-to-Many |
-| Resume | Version | One-to-Many |
-
-The ownership chain is:
-
-```text
-Authenticated User
-       ↓
-     Resume
-       ↓
-    Section
-       ↓
-      Item
-```
-
----
-
-# 📊 Database Schema
-
-## Users
-
-```text
+``` text
 users
-├── id
-├── name
-├── email
-├── password
-├── reset_password_token
-├── reset_password_expires
-├── created_at
-└── updated_at
+ ├── resumes
+ │    ├── sections
+ │    │    └── items
+ │    └── versions
+ └── applications
+
+templates
 ```
 
-- `email` is unique
-- passwords are bcrypt hashes
-- reset fields are nullable
-- emails are normalized before persistence
+### Main relationships
 
-## Resumes
+``` text
+User.hasMany(Resume)
+Resume.belongsTo(User)
 
-```text
-resumes
-├── id
-├── user_id
-├── title
-├── template
-├── created_at
-└── updated_at
+Resume.hasMany(Section)
+Section.belongsTo(Resume)
+
+Section.hasMany(Item)
+Item.belongsTo(Section)
+
+Resume.hasMany(Version)
+Version.belongsTo(Resume)
+
+User.hasMany(Application)
+Application.belongsTo(User)
 ```
 
-## Sections
+Foreign keys use cascading behavior where appropriate to prevent orphan
+records.
 
-```text
-sections
-├── id
-├── resume_id
-├── name
-├── position
-├── created_at
-└── updated_at
-```
+### Important schema concepts
 
-## Items
+-   Primary keys
+-   Foreign keys
+-   Unique constraints
+-   JSON columns
+-   Nullable fields
+-   Timestamps
+-   Cascading deletes
+-   Sequelize migrations
+-   Sequelize seeders
 
-```text
-items
-├── id
-├── section_id
-├── content
-├── position
-├── created_at
-└── updated_at
-```
-
-`content` is JSON to support different types of resume entries.
-
-## Versions
-
-```text
-versions
-├── id
-├── resume_id
-├── version_number
-├── snapshot
-├── created_at
-└── updated_at
-```
-
-A unique composite index is used for:
-
-```text
-(resume_id, version_number)
-```
-
----
+------------------------------------------------------------------------
 
 # 🔗 ER Diagram
 
+ResumeFlow uses a relational MySQL database where users own resumes and job applications, resumes contain sections and version snapshots, and sections contain individual resume items.
+
 ```mermaid
 erDiagram
-    USER ||--o{ RESUME : owns
-    RESUME ||--o{ SECTION : contains
-    SECTION ||--o{ ITEM : contains
-    RESUME ||--o{ VERSION : stores
+   USERS ||--o{ RESUMES : owns
+   USERS ||--o{ APPLICATIONS : tracks
 
-    USER {
-        INT id PK
-        VARCHAR name
-        VARCHAR email UK
-        VARCHAR password
-        VARCHAR reset_password_token
-        DATETIME reset_password_expires
-        DATETIME created_at
-        DATETIME updated_at
-    }
+   RESUMES ||--o{ SECTIONS : contains
+   SECTIONS ||--o{ ITEMS : contains
 
-    RESUME {
-        INT id PK
-        INT user_id FK
-        VARCHAR title
-        VARCHAR template
-        DATETIME created_at
-        DATETIME updated_at
-    }
+   RESUMES ||--o{ VERSIONS : has
 
-    SECTION {
-        INT id PK
-        INT resume_id FK
-        VARCHAR name
-        INT position
-        DATETIME created_at
-        DATETIME updated_at
-    }
+   USERS {
+      INT id PK
+      STRING name
+      STRING email UK
+      STRING password
+      STRING reset_password_token
+      DATE reset_password_expires
+      DATE created_at
+      DATE updated_at
+   }
 
-    ITEM {
-        INT id PK
-        INT section_id FK
-        JSON content
-        INT position
-        DATETIME created_at
-        DATETIME updated_at
-    }
+   RESUMES {
+      INT id PK
+      INT user_id FK
+      STRING title
+      STRING template
+      DATE created_at
+      DATE updated_at
+   }
 
-    VERSION {
-        INT id PK
-        INT resume_id FK
-        INT version_number
-        JSON snapshot
-        DATETIME created_at
-        DATETIME updated_at
-    }
+   SECTIONS {
+      INT id PK
+      INT resume_id FK
+      STRING title
+      INT position
+      DATE created_at
+      DATE updated_at
+   }
+
+   ITEMS {
+      INT id PK
+      INT section_id FK
+      TEXT content
+      INT position
+      DATE created_at
+      DATE updated_at
+   }
+
+   VERSIONS {
+      INT id PK
+      INT resume_id FK
+      INT version_number
+      JSON snapshot
+      DATE created_at
+      DATE updated_at
+   }
+
+   TEMPLATES {
+      INT id PK
+      STRING name
+      STRING description
+      JSON config
+      DATE created_at
+      DATE updated_at
+   }
+
+   APPLICATIONS {
+      INT id PK
+      INT user_id FK
+      STRING company
+      STRING job_title
+      STRING job_url
+      STRING status
+      TEXT notes
+      DATE applied_at
+      DATE created_at
+      DATE updated_at
+   }
 ```
 
----
+------------------------------------------------------------------------
 
-# 🔐 Authentication & Security
+# 🔐 Authentication
 
-ResumeFlow uses **JWT authentication** for protected resources.
+## Register
 
-After login:
-
-```text
-Authorization: Bearer <JWT>
-```
-
-Protected controllers access the authenticated user through:
-
-```js
-req.user.id
-```
-
-That ID is then used for authorization and resource ownership checks.
-
-## Password Security
-
-Passwords are hashed with **bcrypt** through Sequelize lifecycle hooks.
-
-This means password hashing is centralized at the model level instead of being duplicated throughout controllers.
-
----
-
-# 🔑 Authentication APIs
-
-| Method | Endpoint | Purpose |
-|---|---|---|
-| POST | `/api/auth/register` | Register a user |
-| POST | `/api/auth/login` | Login and receive JWT |
-| POST | `/api/auth/logout` | Logout |
-| POST | `/api/auth/forgot-password` | Generate reset token |
-| POST | `/api/auth/reset-password` | Reset password |
-
-### Register
-
-```http
+``` http
 POST /api/auth/register
 ```
 
-```json
+``` json
 {
   "name": "Deepesh",
   "email": "deepesh@example.com",
-  "password": "Password123"
+  "password": "password123"
 }
 ```
 
-### Login
+Passwords are processed through bcrypt before persistence.
 
-```http
+## Login
+
+``` http
 POST /api/auth/login
 ```
 
-```json
-{
-  "email": "deepesh@example.com",
-  "password": "Password123"
-}
+Successful login returns a JWT containing the authenticated user's
+identity.
+
+Protected requests use:
+
+``` http
+Authorization: Bearer <JWT>
 ```
 
-Successful login returns a JWT.
+Authentication flow:
 
-### Logout
-
-```http
-POST /api/auth/logout
+``` text
+Request
+  ↓
+Read Authorization header
+  ↓
+Extract JWT
+  ↓
+Verify JWT
+  ↓
+Identify user
+  ↓
+req.user.id
+  ↓
+Controller
 ```
 
-The current implementation returns a successful logout response. The project does not maintain a server-side JWT blacklist.
+## Password reset
 
-### Forgot Password
-
-```http
+``` http
 POST /api/auth/forgot-password
-```
-
-A cryptographically random reset token is generated and stored with a **1-hour expiry**.
-
-For this internship implementation, the token is returned directly so the flow can be tested without an external email service.
-
-### Reset Password
-
-```http
 POST /api/auth/reset-password
 ```
 
-```json
-{
-  "resetToken": "<token-from-forgot-password>",
-  "password": "NewPassword123"
-}
-```
+The reset workflow uses: - random reset tokens - expiration timestamps -
+password hashing through the User model hook - token invalidation after
+successful reset
 
-The API:
+> For a production deployment, the reset token should be delivered
+> through a secure email workflow rather than returned directly by the
+> API.
 
-1. Finds the user using the token
-2. Checks expiry
-3. Assigns the new password
-4. Lets the model hook hash it
-5. Clears the token
-6. Clears the expiry
+------------------------------------------------------------------------
 
-A successful reset invalidates the token.
+# 🛡️ Authorization & Ownership
 
----
+Authentication answers:
 
-# 👤 User APIs
+> Who are you?
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/users` | Get all users |
-| GET | `/api/users/profile` | Get current user profile |
-| GET | `/api/users/profile/:id` | Get user by ID |
-| PUT | `/api/users/profile` | Update current user profile |
+Authorization answers:
 
----
+> Are you allowed to access this resource?
 
-# 📄 Resume APIs
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/resumes` | Create resume |
-| GET | `/api/resumes` | Get all user's resumes |
-| GET | `/api/resumes/:id` | Get one resume |
-| PUT | `/api/resumes/:id` | Update resume |
-| DELETE | `/api/resumes/:id` | Delete resume |
-| POST | `/api/resumes/import` | Import resume |
-| POST | `/api/resumes/:id/duplicate` | Duplicate resume |
-
-## Resume Ownership
-
-The authenticated user's ID is used rather than trusting a client-provided `userId`.
-
-```js
-const userId = req.user.id;
-```
-
-This keeps resource ownership server-controlled.
-
-## Import Resume
-
-```http
-POST /api/resumes/import
-```
-
-Supported mock sources:
-
-```text
-linkedin
-file
-```
+ResumeFlow performs ownership checks on user-owned resources.
 
 Example:
 
-```json
-{
-  "source": "linkedin",
-  "data": {
-    "title": "My Professional Resume",
-    "template": "Modern"
-  }
-}
-```
-
-The imported Resume belongs to the authenticated user.
-
-The current internship implementation creates the Resume only; it does not generate Sections or Items during import.
-
-## Duplicate Resume
-
-```http
-POST /api/resumes/:id/duplicate
-```
-
-A duplicate:
-
-- gets a new ID
-- belongs to the authenticated user
-- copies the template
-- uses `Original Title - Copy`
-- does not copy sections/items
-- does not copy versions
-
----
-
-# 🧩 Section APIs
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/resumes/:resumeId/sections` | Create section |
-| GET | `/api/resumes/:resumeId/sections` | Get all sections |
-| PATCH | `/api/resumes/:resumeId/sections/:sectionId` | Update/reorder section |
-| DELETE | `/api/resumes/:resumeId/sections/:sectionId` | Delete section |
-
-Sections contain:
-
-```text
-name
-position
-```
-
-Sections are returned ordered by:
-
-```text
-position ASC
-```
-
-This provides a clean foundation for frontend drag-and-drop reordering.
-
----
-
-# 📝 Item APIs
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/resumes/:resumeId/sections/:sectionId/items` | Create item |
-| PATCH | `/api/resumes/:resumeId/sections/:sectionId/items/:itemId` | Update/reorder item |
-| DELETE | `/api/resumes/:resumeId/sections/:sectionId/items/:itemId` | Delete item |
-
-Each Item contains:
-
-```text
-content → JSON
-position → integer
-```
-
-The JSON content design allows entries such as:
-
-```text
-Education
-Experience
-Projects
-Skills
-Certifications
-Achievements
-Custom sections
-```
-
-without requiring a separate database table for every possible entry type.
-
----
-
-# 🕐 Versioning APIs
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/resumes/:resumeId/versions` | Save a version |
-| GET | `/api/resumes/:resumeId/versions` | List versions |
-| POST | `/api/resumes/:resumeId/versions/:versionId/restore` | Restore version |
-
-## Version Creation
-
-The server automatically increments the version number:
-
-```text
-No version → 1
-Version 1 → 2
-Version 2 → 3
-Version 3 → 4
-```
-
-The saved state is stored in `snapshot` as JSON.
-
-## Version Listing
-
-Versions are returned newest-first:
-
-```text
-Version 5
-Version 4
-Version 3
-Version 2
-Version 1
-```
-
-## Restore
-
-```http
-POST /api/resumes/:resumeId/versions/:versionId/restore
-```
-
-The current internship implementation restores the saved Resume state within the defined scope.
-
----
-
-# 🛡️ Authorization Strategy
-
-Nested resource authorization follows the ownership chain.
-
-Example:
-
-```js
-const resume = await Resume.findOne({
+``` js
+const application = await Application.findOne({
     where: {
-        id: resumeId,
+        id,
         userId
     }
 });
 ```
 
-Then:
+Therefore:
 
-```js
-const section = await Section.findOne({
-    where: {
-        id: sectionId,
-        resumeId
-    }
-});
+``` text
+User A
+  ↓
+requests User B's application
+  ↓
+ownership query fails
+  ↓
+404 Not Found
 ```
 
-Then:
+Ownership is enforced across: - Resumes - Sections - Items - Versions -
+Applications
 
-```js
-const item = await Item.findOne({
-    where: {
-        id: itemId,
-        sectionId
-    }
-});
+Nested resources are validated through their parent relationships.
+
+------------------------------------------------------------------------
+
+# 📚 Complete API Reference
+
+## Authentication
+
+  Method   Endpoint                      Auth   Purpose
+  -------- ----------------------------- ------ ----------------------
+  POST     `/api/auth/register`          ❌     Register
+  POST     `/api/auth/login`             ❌     Login
+  POST     `/api/auth/logout`            ✅     Logout
+  POST     `/api/auth/forgot-password`   ❌     Generate reset token
+  POST     `/api/auth/reset-password`    ❌     Reset password
+
+## Resumes
+
+  Method      Endpoint                       Auth   Purpose
+  ----------- ------------------------------ ------ ---------------------
+  POST        `/api/resumes`                 ✅     Create
+  GET         `/api/resumes`                 ✅     List user's resumes
+  GET         `/api/resumes/:id`             ✅     Get one
+  PUT/PATCH   `/api/resumes/:id`             ✅     Update
+  DELETE      `/api/resumes/:id`             ✅     Delete
+  POST        `/api/resumes/import`          ✅     Import
+  POST        `/api/resumes/:id/duplicate`   ✅     Duplicate
+
+## Sections
+
+  ----------------------------------------------------------------------------------------------------
+  Method            Endpoint                                       Auth              Purpose
+  ----------------- ---------------------------------------------- ----------------- -----------------
+  POST              `/api/resumes/:resumeId/sections`              ✅                Create
+
+  GET               `/api/resumes/:resumeId/sections`              ✅                List
+
+  PUT/PATCH         `/api/resumes/:resumeId/sections/:sectionId`   ✅                Update
+
+  DELETE            `/api/resumes/:resumeId/sections/:sectionId`   ✅                Delete
+  ----------------------------------------------------------------------------------------------------
+
+## Items
+
+  ------------------------------------------------------------------------------------------------------------------
+  Method            Endpoint                                                     Auth              Purpose
+  ----------------- ------------------------------------------------------------ ----------------- -----------------
+  POST              `/api/resumes/:resumeId/sections/:sectionId/items`           ✅                Create
+
+  GET               `/api/resumes/:resumeId/sections/:sectionId/items`           ✅                List
+
+  PUT/PATCH         `/api/resumes/:resumeId/sections/:sectionId/items/:itemId`   ✅                Update
+
+  DELETE            `/api/resumes/:resumeId/sections/:sectionId/items/:itemId`   ✅                Delete
+  ------------------------------------------------------------------------------------------------------------------
+
+## Versions
+
+  -------------------------------------------------------------------------------------------------
+  Method            Endpoint                                    Auth              Purpose
+  ----------------- ------------------------------------------- ----------------- -----------------
+  POST              `/api/resumes/:resumeId/versions`           ✅                Create snapshot
+
+  GET               `/api/resumes/:resumeId/versions`           ✅                Version history
+
+  POST              `/api/resumes/:resumeId/versions/restore`   ✅                Restore version
+  -------------------------------------------------------------------------------------------------
+
+## Templates
+
+  Method   Endpoint               Auth   Purpose
+  -------- ---------------------- ------ ----------------
+  GET      `/api/templates`       ❌     List templates
+  GET      `/api/templates/:id`   ❌     Get template
+
+## AI
+
+  Method   Endpoint            Auth   Purpose
+  -------- ------------------- ------ -------------------
+  POST     `/api/ai/bullets`   ✅     Generate bullets
+  POST     `/api/ai/summary`   ✅     Generate summary
+  POST     `/api/ai/rewrite`   ✅     Rewrite text
+  POST     `/api/ai/prompt`    ✅     General AI action
+
+## Applications
+
+  Method   Endpoint                  Auth   Purpose
+  -------- ------------------------- ------ --------------------------
+  POST     `/api/applications`       ✅     Create application
+  GET      `/api/applications`       ✅     List user's applications
+  PATCH    `/api/applications/:id`   ✅     Update application
+  DELETE   `/api/applications/:id`   ✅     Delete application
+
+> If route names or verbs differ in the final source tree, treat the
+> actual route files as the source of truth.
+
+------------------------------------------------------------------------
+
+# 🕐 Versioning & Restore
+
+A resume can have multiple snapshots:
+
+``` text
+Resume
+ ├── Version 1
+ ├── Version 2
+ ├── Version 3
+ └── Version 4
 ```
 
-So access is effectively:
+When a version is created:
 
-```text
-JWT
- ↓
-Authenticated User
- ↓
-Owns Resume?
- ↓
-Owns Section through Resume?
- ↓
-Owns Item through Section?
- ↓
-Perform operation
+``` text
+Find latest version
+      ↓
+latest + 1
+      ↓
+Store JSON snapshot
 ```
 
-This prevents simple ID-guessing attacks against nested resources.
+If no version exists:
 
----
+``` text
+versionNumber = 1
+```
+
+A database uniqueness constraint prevents duplicate version numbers for
+the same resume.
+
+Restore provides a foundation for: - safe experimentation - draft
+recovery - undo-like workflows - resume history
+
+------------------------------------------------------------------------
+
+# 🤖 AI Module
+
+The AI architecture is deliberately separated:
+
+``` text
+AI Route
+   ↓
+AI Controller
+   ↓
+AI Service
+   ↓
+Mock implementation
+```
+
+There is intentionally **no AI Sequelize model** because the current AI
+endpoints are stateless:
+
+``` text
+Request → Service → Response
+```
+
+If future requirements call for AI history, the project can introduce an
+`ai_requests` table containing fields such as user, endpoint, prompt,
+response, token usage, and timestamps.
+
+### Example --- bullets
+
+``` json
+{
+  "text": "backend APIs",
+  "context": "Node.js internship"
+}
+```
+
+### Example --- rewrite
+
+``` json
+{
+  "text": "I made APIs using Node",
+  "tone": "professional"
+}
+```
+
+The service layer means a future real AI provider can replace the mock
+implementation without redesigning the routes.
+
+------------------------------------------------------------------------
+
+# 🎨 Templates
+
+Templates are global resources and do not belong to individual users.
+
+Seeded templates:
+
+``` text
+Modern
+Classic
+Minimal
+Creative
+Professional
+```
+
+Template configuration is JSON-driven, for example:
+
+``` json
+{
+  "layout": "two-column",
+  "font": "Inter",
+  "primaryColor": "#000000",
+  "spacing": "comfortable"
+}
+```
+
+This allows a future frontend to render layouts dynamically.
+
+------------------------------------------------------------------------
+
+# 💼 Job Application Tracker
+
+The application tracker extends ResumeFlow from resume creation into the
+broader job-search workflow.
+
+Example:
+
+``` json
+{
+  "company": "Google",
+  "jobTitle": "Software Engineer",
+  "jobUrl": "https://example.com/job",
+  "status": "applied",
+  "notes": "Applied through careers portal"
+}
+```
+
+Application lifecycle:
+
+``` text
+Applied
+   ↓
+Interview
+   ↓
+Offer
+```
+
+Alternative outcomes:
+
+``` text
+Rejected
+Withdrawn
+```
+
+The authenticated user ID is always taken from the JWT rather than
+trusting a client-provided `userId`.
+
+------------------------------------------------------------------------
+
+# 📥 Import & Duplicate
+
+### Import
+
+Resume import accepts structured data from supported sources such as
+LinkedIn or file-based input and creates a new resume.
+
+### Duplicate
+
+A duplicate receives a new database identity while preserving the
+relevant resume configuration.
+
+Example:
+
+``` text
+"My Resume"
+     ↓
+"My Resume - Copy"
+```
+
+This is useful for tailoring resumes to different roles.
+
+------------------------------------------------------------------------
 
 # ✅ Validation
 
-Current validation includes:
+Validation exists at the model and database levels.
+
+Examples:
 
 ### User
 
-```text
-Name: required, 2–100 characters
-Email: required, valid email, unique
-Password: required, minimum 8 characters
-```
-
-### Section
-
-```text
-Name: required, 2–100 characters
-Position: integer, minimum 1
-```
-
-### Item
-
-```text
-Content: required JSON
-Position: integer, minimum 1
-```
+-   name required
+-   name length
+-   valid email
+-   unique email
+-   password minimum length
 
 ### Version
 
-```text
-Version number: integer, minimum 1
-Snapshot: required JSON
+-   integer version number
+-   minimum version number of 1
+-   required JSON snapshot
+
+### Application
+
+-   company length
+-   job title length
+-   valid URL when supplied
+-   allowed status values
+-   optional notes
+-   automatic application timestamp
+
+### Items/Sections
+
+-   required parent relationships
+-   resource ownership checks
+
+------------------------------------------------------------------------
+
+# 📡 HTTP Status Strategy
+
+    Status Meaning
+  -------- --------------------------------------
+       200 Successful read/update/delete
+       201 Successfully created
+       400 Invalid request / validation failure
+       401 Authentication failure
+       404 Resource not found or inaccessible
+       409 Conflict
+       500 Unexpected server error
+
+Successful responses generally follow:
+
+``` json
+{
+  "success": true,
+  "message": "Operation completed successfully",
+  "data": {}
+}
 ```
 
----
+Errors:
 
-# 🗄️ Database Integrity
-
-Foreign keys connect the hierarchy:
-
-```text
-users.id
-   ↓
-resumes.user_id
-   ↓
-sections.resume_id
-   ↓
-items.section_id
+``` json
+{
+  "success": false,
+  "message": "Resource not found"
+}
 ```
 
-and:
+Controllers use `next(error)` for unexpected errors so centralized error
+handling can process them.
 
-```text
-resumes.id
-   ↓
-versions.resume_id
+------------------------------------------------------------------------
+
+# 🧱 Sequelize & Database Workflow
+
+Migrations provide version-controlled database schema changes.
+
+``` bash
+npx sequelize-cli db:migrate
 ```
 
-Cascading behavior is configured where appropriate so dependent records do not become orphaned.
+Undo latest migration:
 
----
-
-# 🔄 Example Resume Lifecycle
-
-```text
-                 CREATE RESUME
-                       │
-                       ▼
-                ADD SECTIONS
-                       │
-                       ▼
-                  ADD ITEMS
-                       │
-                       ▼
-                SAVE VERSION
-                       │
-                       ▼
-               EDIT RESUME
-                       │
-                       ▼
-                SAVE VERSION
-                       │
-                       ▼
-             NEED OLD VERSION?
-                    /                       YES      NO
-                   │
-                   ▼
-                RESTORE
+``` bash
+npx sequelize-cli db:migrate:undo
 ```
 
----
+Run seeders:
 
-# 🔐 Password Reset Lifecycle
-
-```text
-Forgot Password
-      │
-      ▼
-Find user by email
-      │
-      ▼
-Generate random token
-      │
-      ▼
-Store token + 1 hour expiry
-      │
-      ▼
-Return token for testing
-      │
-      ▼
-Reset Password
-      │
-      ├── Validate token
-      ├── Validate expiry
-      ├── Update password
-      ├── Hash password
-      └── Clear reset fields
-      │
-      ▼
-Login with new password
+``` bash
+npx sequelize-cli db:seed:all
 ```
 
----
+Undo seeders:
 
-# 🧪 API Testing
+``` bash
+npx sequelize-cli db:seed:undo
+```
 
-The completed APIs have been manually tested with **Postman**.
+The project consistently uses:
 
-Testing covers both successful and failure scenarios.
+``` js
+timestamps: true,
+underscored: true
+```
 
-## Main testing sequence
+so JavaScript fields such as `userId` map to database fields such as
+`user_id`.
 
-```text
+------------------------------------------------------------------------
+
+# 🌱 Seed Data
+
+Templates are seeded rather than manually inserted.
+
+``` bash
+npx sequelize-cli db:seed:all
+```
+
+This makes the environment reproducible for another developer.
+
+------------------------------------------------------------------------
+
+# 🧪 Testing Strategy
+
+The API was developed and tested using Postman.
+
+Testing includes:
+
+### Authentication
+
+-   registration
+-   duplicate email
+-   valid/invalid login
+-   protected routes
+-   forgot password
+-   invalid/expired reset token
+-   password reset
+
+### Resume/content
+
+-   CRUD
+-   nested resources
+-   ownership
+-   import
+-   duplicate
+
+### Versions
+
+-   automatic numbering
+-   retrieval
+-   restore
+-   invalid version handling
+
+### Templates
+
+-   list
+-   individual lookup
+-   invalid ID
+
+### AI
+
+-   successful generation
+-   missing required input
+-   JWT protection
+
+### Applications
+
+-   create
+-   list
+-   partial update
+-   delete
+-   invalid status
+-   invalid ID
+-   ownership isolation
+
+Recommended end-to-end flow:
+
+``` text
 Register
-   ↓
+  ↓
 Login
-   ↓
-Get JWT
-   ↓
-Authenticated User APIs
-   ↓
+  ↓
+Copy JWT
+  ↓
 Create Resume
-   ↓
-Resume CRUD
-   ↓
-Section CRUD
-   ↓
-Item CRUD
-   ↓
+  ↓
+Create Sections
+  ↓
+Create Items
+  ↓
 Create Version
-   ↓
-List Versions
-   ↓
-Restore Version
-   ↓
-Import Resume
-   ↓
-Duplicate Resume
-   ↓
-Forgot Password
-   ↓
-Reset Password
-   ↓
-Login with new password
+  ↓
+Use AI endpoints
+  ↓
+Track Applications
+  ↓
+Restore a Resume Version
 ```
 
-## Tested failure cases
+------------------------------------------------------------------------
 
-- Missing JWT
-- Invalid JWT
-- Invalid login credentials
-- Missing/invalid resource IDs
-- User not found
-- Resume not found
-- Section not found
-- Item not found
-- Invalid reset token
-- Expired reset token
-- Duplicate email
-- Invalid import source
-- Invalid nested-resource ownership
-- Database validation errors
+# ⚙️ Setup
 
----
+## Prerequisites
 
-# 📡 HTTP Status Codes
+-   Node.js
+-   npm
+-   MySQL
+-   Git
+-   Postman (recommended)
 
-| Status | Meaning |
-|---|---|
-| `200 OK` | Successful operation |
-| `201 Created` | Resource created |
-| `400 Bad Request` | Invalid input / expired token |
-| `401 Unauthorized` | Missing/invalid authentication |
-| `404 Not Found` | Resource does not exist |
-| `409 Conflict` | Resource conflict |
+Check versions:
 
----
+``` bash
+node -v
+npm -v
+```
 
-# ⚙️ Environment Setup
+## Clone
 
-## Install dependencies
-
-```bash
+``` bash
+git clone <YOUR_REPOSITORY_URL>
+cd ResumeFlow
 npm install
 ```
 
-## Environment variables
+## Environment
 
-Create a `.env` file:
+Create `.env`:
 
-```env
+``` env
 PORT=3000
 
 DB_HOST=localhost
@@ -868,399 +981,341 @@ DB_PORT=3306
 DB_NAME=resumeflow
 DB_USER=root
 DB_PASSWORD=your_mysql_password
-DB_DIALECT=mysql
 
-JWT_SECRET=your_jwt_secret
+JWT_SECRET=your_super_secret_key
 JWT_EXPIRES_IN=1d
 ```
 
-Never commit real credentials.
+Never commit real secrets.
+
+Recommended `.gitignore`:
+
+``` gitignore
+node_modules/
+.env
+.env.*
+!.env.example
+```
 
 ## Database
 
-Create the MySQL database:
-
-```sql
+``` sql
 CREATE DATABASE resumeflow;
 ```
 
-Run migrations:
+Then:
 
-```bash
+``` bash
 npx sequelize-cli db:migrate
+npx sequelize-cli db:seed:all
 ```
 
-## Start server
+Run the server:
 
-```bash
-npm start
-```
-
-If a development script is configured:
-
-```bash
+``` bash
 npm run dev
 ```
 
-Default local API:
+or:
 
-```text
+``` bash
+npm start
+```
+
+Default local URL:
+
+``` text
 http://localhost:3000
 ```
 
----
+------------------------------------------------------------------------
 
-# 🧰 Useful Sequelize Commands
+# 🔄 Development Workflow
 
-Run migrations:
+The project was built module-by-module:
 
-```bash
-npx sequelize-cli db:migrate
-```
-
-Undo latest migration:
-
-```bash
-npx sequelize-cli db:migrate:undo
-```
-
-Check migration status:
-
-```bash
-npx sequelize-cli db:migrate:status
-```
-
-Generate a migration:
-
-```bash
-npx sequelize-cli migration:generate --name migration-name
-```
-
-Generate a model:
-
-```bash
-npx sequelize-cli model:generate
-```
-
----
-
-# 🎯 Design Decisions
-
-## Why Sequelize?
-
-Sequelize provides:
-
-- ORM-based database access
-- Associations
-- Validation
-- Hooks
-- Migrations
-- MySQL support
-- Cleaner model/controller separation
-
-## Why JSON for Item Content?
-
-Resume entries are naturally heterogeneous.
-
-For example:
-
-```json
-{
-  "company": "Example Technologies",
-  "role": "Software Developer",
-  "description": "Built REST APIs using Node.js."
-}
-```
-
-A JSON field provides flexibility while the relational section hierarchy preserves structure.
-
-## Why Version Snapshots?
-
-Snapshots preserve a point-in-time state:
-
-```text
-Resume State A → Version 1
-Resume State B → Version 2
-Resume State C → Version 3
-```
-
-This provides a foundation for history and rollback.
-
-## Why Nested Routes?
-
-Instead of only:
-
-```text
-PATCH /api/items/7
-```
-
-the API exposes:
-
-```text
-PATCH /api/resumes/1/sections/2/items/7
-```
-
-The hierarchy communicates ownership and gives the server enough context to validate the entire resource chain.
-
----
-
-# 🧠 Backend Concepts Demonstrated
-
-This project demonstrates practical backend engineering concepts:
-
-- RESTful API design
-- Express routing
-- Middleware
-- JWT authentication
-- Authorization
-- bcrypt password hashing
-- Password recovery
-- Sequelize ORM
-- Model associations
-- Sequelize hooks
-- Database migrations
-- Foreign keys
-- Cascade operations
-- Nested resources
-- Ownership-based authorization
-- JSON data modeling
-- Versioning
-- Snapshot storage
-- Rollback
-- Request validation
-- Error propagation
-- HTTP status codes
-- Postman testing
-- Git/GitHub workflow
-
----
-
-# 🚧 Roadmap
-
-## Completed
-
-- [x] Express server
-- [x] MySQL connection
-- [x] Sequelize setup
-- [x] Database migrations
-- [x] User model
-- [x] JWT authentication
-- [x] bcrypt password hashing
-- [x] Register
-- [x] Login
-- [x] Logout
-- [x] Forgot Password
-- [x] Reset Password
-- [x] User APIs
-- [x] Resume CRUD
-- [x] Resume Import
-- [x] Resume Duplicate
-- [x] Section APIs
-- [x] Item APIs
-- [x] Version APIs
-- [x] Version Restore
-- [x] Postman testing
-- [x] API documentation
-
-## Next
-
-- [ ] Templates module
-- [ ] AI bullet generation
-- [ ] AI summary generation
-- [ ] AI rewrite
-- [ ] AI freeform prompt actions
-- [ ] Final API audit
-- [ ] Production-readiness improvements
-
----
-
-# 🎨 Planned Templates Module
-
-The internship specification includes:
-
-```text
-GET /api/templates
-GET /api/templates/:id
-```
-
-Purpose:
-
-- List available resume designs
-- Retrieve a template's configuration
-
----
-
-# 🤖 Planned AI Module
-
-The internship specification includes:
-
-```text
-POST /api/ai/bullets
-POST /api/ai/summary
-POST /api/ai/rewrite
-POST /api/ai/prompt
-```
-
-| Endpoint | Purpose |
-|---|---|
-| `/api/ai/bullets` | Generate or improve bullet points |
-| `/api/ai/summary` | Generate a professional summary/headline |
-| `/api/ai/rewrite` | Tighten or improve selected text |
-| `/api/ai/prompt` | Apply a freeform instruction to a section |
-
-The AI module is intentionally separate from normal CRUD resources because these endpoints represent action-oriented operations.
-
----
-
-# 📈 Current Status
-
-```text
-Authentication     ████████████████████ 100%
-Users              ████████████████████ 100%
-Resumes            ████████████████████ 100%
-Sections           ████████████████████ 100%
-Items              ████████████████████ 100%
-Versions           ████████████████████ 100%
-Templates          ░░░░░░░░░░░░░░░░░░░░ Next
-AI                 ░░░░░░░░░░░░░░░░░░░░ Next
-```
-
----
-
-# 🧑‍💻 Development Workflow
-
-The project is being developed incrementally:
-
-```text
-Requirement
+``` text
+Requirements
     ↓
 Database design
     ↓
 Migration
     ↓
-Model + association
+Model + associations
     ↓
 Controller
     ↓
-Route
+Routes
     ↓
-Postman test
+Postman tests
     ↓
-Bug fixing
-    ↓
-Documentation
+Validation/debugging
     ↓
 Git commit
 ```
 
-This keeps implementation and documentation synchronized as the backend grows.
+This approach kept each module independently testable and made debugging
+database/API mismatches easier.
 
----
+------------------------------------------------------------------------
 
-# 📌 Complete Current API Map
+# 🧠 Engineering Concepts Demonstrated
+
+### API design
+
+-   RESTful resources
+-   HTTP verbs
+-   status codes
+-   JSON contracts
+-   nested routes
+
+### Authentication
+
+-   JWT
+-   bcrypt
+-   password reset
+-   middleware
+
+### Authorization
+
+-   ownership checks
+-   nested ownership
+-   authenticated user scoping
+
+### ORM
+
+-   Sequelize models
+-   associations
+-   hooks
+-   validation
+-   `findOne`
+-   `findAll`
+-   `create`
+-   `save`
+-   `destroy`
+
+### Database engineering
+
+-   primary/foreign keys
+-   unique constraints
+-   JSON
+-   migrations
+-   seeders
+-   cascading deletes
+-   timestamps
+
+### Architecture
+
+-   routes
+-   middleware
+-   controllers
+-   services
+-   models
+-   utilities
+
+------------------------------------------------------------------------
+
+# 🚀 Future Roadmap
+
+The internship/API scope is complete. Possible production improvements
+include:
 
 ## Authentication
 
-```text
-POST /api/auth/register
-POST /api/auth/login
-POST /api/auth/logout
-POST /api/auth/forgot-password
-POST /api/auth/reset-password
+-   refresh tokens
+-   email verification
+-   real password-reset emails
+-   rate limiting
+-   session management
+-   OAuth
+
+## Resume builder
+
+-   PDF export
+-   DOCX export
+-   live preview
+-   autosave
+-   drag-and-drop ordering
+-   ATS score
+-   public resume URLs
+
+## AI
+
+-   real AI provider integration
+-   ATS optimization
+-   job-description matching
+-   keyword extraction
+-   grammar improvement
+-   personalized summaries
+-   AI usage tracking
+
+## Applications
+
+-   pagination
+-   search
+-   filtering
+-   sorting
+-   reminders
+-   interview scheduling
+-   analytics
+-   conversion-rate dashboard
+
+## Engineering
+
+-   unit tests
+-   integration tests
+-   Swagger/OpenAPI
+-   Docker
+-   CI/CD
+-   structured logging
+-   monitoring
+-   rate limiting
+-   automated backups
+-   production deployment
+
+------------------------------------------------------------------------
+
+# 🔒 Production Security Checklist
+
+Before public deployment:
+
+-   [ ] Strong JWT secret
+-   [ ] HTTPS
+-   [ ] Secure environment variables
+-   [ ] Rate limiting
+-   [ ] CORS configuration
+-   [ ] Security headers
+-   [ ] Request validation
+-   [ ] Real password-reset email delivery
+-   [ ] Database least-privilege account
+-   [ ] Dependency vulnerability checks
+-   [ ] Logging/monitoring
+-   [ ] Database backups
+-   [ ] No secrets committed to Git
+
+------------------------------------------------------------------------
+
+# 📊 Project Status
+
+``` text
+████████████████████████████████████████ 100%
 ```
 
-## Users
+-   [x] Express server
+-   [x] MySQL integration
+-   [x] Sequelize ORM
+-   [x] Migrations
+-   [x] Seeders
+-   [x] Authentication
+-   [x] JWT authorization
+-   [x] bcrypt hashing
+-   [x] Password reset
+-   [x] Resume CRUD
+-   [x] Resume import
+-   [x] Resume duplication
+-   [x] Sections CRUD
+-   [x] Items CRUD
+-   [x] Version creation/history
+-   [x] Version restore
+-   [x] Templates
+-   [x] AI service layer
+-   [x] AI bullets
+-   [x] AI summary
+-   [x] AI rewrite
+-   [x] AI prompt
+-   [x] Application tracker
+-   [x] Resource ownership
+-   [x] Validation
+-   [x] Error handling
+-   [x] Postman testing
+-   [x] Documentation
 
-```text
-GET  /api/users
-GET  /api/users/profile
-GET  /api/users/profile/:id
-PUT  /api/users/profile
+------------------------------------------------------------------------
+
+# 🏆 Why ResumeFlow Stands Out
+
+ResumeFlow demonstrates more than basic CRUD.
+
+### 1. Security
+
+Authentication is combined with resource-level authorization.
+
+### 2. Nested ownership
+
+The project validates relationships such as:
+
+``` text
+User → Resume → Section → Item
 ```
 
-## Resumes
+rather than trusting IDs supplied by clients.
 
-```text
-POST   /api/resumes
-GET    /api/resumes
-GET    /api/resumes/:id
-PUT    /api/resumes/:id
-DELETE /api/resumes/:id
-POST   /api/resumes/import
-POST   /api/resumes/:id/duplicate
+### 3. Versioning
+
+Resume snapshots and rollback introduce real state-management
+requirements.
+
+### 4. Service abstraction
+
+AI logic is separated from HTTP controllers and can evolve
+independently.
+
+### 5. Database discipline
+
+Schema changes are reproducible through migrations and initial data
+through seeders.
+
+### 6. Product-oriented scope
+
+The project connects resume creation, content improvement, version
+control, templates, AI assistance, and job tracking into one backend.
+
+------------------------------------------------------------------------
+
+# 🤝 Contributing
+
+``` bash
+git checkout -b feature/your-feature
 ```
 
-## Sections
+Implement and test your changes:
 
-```text
-POST   /api/resumes/:resumeId/sections
-GET    /api/resumes/:resumeId/sections
-PATCH  /api/resumes/:resumeId/sections/:sectionId
-DELETE /api/resumes/:resumeId/sections/:sectionId
+``` bash
+git add .
+git commit -m "feat: describe your change"
+git push origin feature/your-feature
 ```
 
-## Items
+Then open a pull request.
 
-```text
-POST   /api/resumes/:resumeId/sections/:sectionId/items
-PATCH  /api/resumes/:resumeId/sections/:sectionId/items/:itemId
-DELETE /api/resumes/:resumeId/sections/:sectionId/items/:itemId
+------------------------------------------------------------------------
+
+# 👤 Author
+
+**Deepesh Singh**
+
+Backend Development • Node.js • Express.js • MySQL • Sequelize
+
+------------------------------------------------------------------------
+
+## ⭐ Final Note
+
+ResumeFlow was built as a complete backend engineering project with an
+emphasis on:
+
+``` text
+Correctness
+    +
+Security
+    +
+Database integrity
+    +
+Maintainability
+    +
+Testability
+    +
+Extensibility
 ```
 
-## Versions
-
-```text
-POST /api/resumes/:resumeId/versions
-GET  /api/resumes/:resumeId/versions
-POST /api/resumes/:resumeId/versions/:versionId/restore
-```
-
----
-
-# 🏁 Current Project Status
-
-**ResumeFlow currently provides a functional backend foundation for a resume-builder platform.**
-
-The core workflow is implemented end-to-end:
-
-```text
-User
- ↓
-Authentication
- ↓
-Resume
- ↓
-Sections
- ↓
-Items
- ↓
-Versions
- ↓
-Restore
-```
-
-Additional resume lifecycle functionality includes:
-
-```text
-Import
-Duplicate
-Password Recovery
-```
-
-The next phase is to add:
-
-```text
-Templates
-   ↓
-AI Actions
-   ↓
-Final API Audit
-   ↓
-Production Readiness
-```
-
----
-
-## License
-
-Developed for **educational and internship purposes**.
+> **ResumeFlow --- Build resumes. Manage versions. Improve content.
+> Track opportunities.**
