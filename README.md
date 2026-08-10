@@ -166,16 +166,16 @@ Sequelize Model
 MySQL
 ```
 
-  Layer         Responsibility
-  ------------- -------------------------------------------
-  Routes        HTTP endpoint definitions
-  Middleware    Authentication and cross-cutting concerns
-  Controllers   Request/response orchestration
-  Services      Reusable business logic
-  Models        Schema, relationships, validation
-  Migrations    Database schema history
-  Seeders       Reproducible starter data
-  Database      Persistent state
+| Layer | Responsibility |
+|---|---|
+| **Routes** | Define HTTP endpoints and map requests to controllers |
+| **Middleware** | Handle authentication and other cross-cutting concerns |
+| **Controllers** | Orchestrate request handling, validation, and responses |
+| **Services** | Contain reusable business logic |
+| **Models** | Define database schema, relationships, and model-level validation |
+| **Migrations** | Track and manage database schema changes |
+| **Seeders** | Populate reproducible initial or demo data |
+| **Database** | Persist application data using MySQL |
 
 This separation keeps controllers readable and makes business logic
 easier to test and replace.
@@ -475,95 +475,101 @@ Nested resources are validated through their parent relationships.
 
 # 📚 Complete API Reference
 
-## Authentication
+## 🔐 Authentication
 
-  Method   Endpoint                      Auth   Purpose
-  -------- ----------------------------- ------ ----------------------
-  POST     `/api/auth/register`          ❌     Register
-  POST     `/api/auth/login`             ❌     Login
-  POST     `/api/auth/logout`            ✅     Logout
-  POST     `/api/auth/forgot-password`   ❌     Generate reset token
-  POST     `/api/auth/reset-password`    ❌     Reset password
+| Method | Endpoint | Auth | Purpose |
+|---|---|:---:|---|
+| `POST` | `/api/auth/register` | ❌ | Register a new user |
+| `POST` | `/api/auth/login` | ❌ | Authenticate user and return JWT |
+| `POST` | `/api/auth/logout` | ✅ | Log out the authenticated user |
+| `POST` | `/api/auth/forgot-password` | ❌ | Generate a password reset token |
+| `POST` | `/api/auth/reset-password` | ❌ | Reset the user's password |
 
-## Resumes
+---
 
-  Method      Endpoint                       Auth   Purpose
-  ----------- ------------------------------ ------ ---------------------
-  POST        `/api/resumes`                 ✅     Create
-  GET         `/api/resumes`                 ✅     List user's resumes
-  GET         `/api/resumes/:id`             ✅     Get one
-  PUT/PATCH   `/api/resumes/:id`             ✅     Update
-  DELETE      `/api/resumes/:id`             ✅     Delete
-  POST        `/api/resumes/import`          ✅     Import
-  POST        `/api/resumes/:id/duplicate`   ✅     Duplicate
+## 📄 Resumes
 
-## Sections
+| Method | Endpoint | Auth | Purpose |
+|---|---|:---:|---|
+| `POST` | `/api/resumes` | ✅ | Create a new resume |
+| `GET` | `/api/resumes` | ✅ | List the authenticated user's resumes |
+| `GET` | `/api/resumes/:id` | ✅ | Get a specific resume |
+| `PUT/PATCH` | `/api/resumes/:id` | ✅ | Update a resume |
+| `DELETE` | `/api/resumes/:id` | ✅ | Delete a resume |
+| `POST` | `/api/resumes/import` | ✅ | Import resume data |
+| `POST` | `/api/resumes/:id/duplicate` | ✅ | Duplicate an existing resume |
 
-  ----------------------------------------------------------------------------------------------------
-  Method            Endpoint                                       Auth              Purpose
-  ----------------- ---------------------------------------------- ----------------- -----------------
-  POST              `/api/resumes/:resumeId/sections`              ✅                Create
+---
 
-  GET               `/api/resumes/:resumeId/sections`              ✅                List
+## 🧩 Sections
 
-  PUT/PATCH         `/api/resumes/:resumeId/sections/:sectionId`   ✅                Update
+| Method | Endpoint | Auth | Purpose |
+|---|---|:---:|---|
+| `POST` | `/api/resumes/:resumeId/sections` | ✅ | Create a section |
+| `GET` | `/api/resumes/:resumeId/sections` | ✅ | List resume sections |
+| `PUT/PATCH` | `/api/resumes/:resumeId/sections/:sectionId` | ✅ | Update a section |
+| `DELETE` | `/api/resumes/:resumeId/sections/:sectionId` | ✅ | Delete a section |
 
-  DELETE            `/api/resumes/:resumeId/sections/:sectionId`   ✅                Delete
-  ----------------------------------------------------------------------------------------------------
+---
 
-## Items
+## 📝 Items
 
-  ------------------------------------------------------------------------------------------------------------------
-  Method            Endpoint                                                     Auth              Purpose
-  ----------------- ------------------------------------------------------------ ----------------- -----------------
-  POST              `/api/resumes/:resumeId/sections/:sectionId/items`           ✅                Create
+| Method | Endpoint | Auth | Purpose |
+|---|---|:---:|---|
+| `POST` | `/api/resumes/:resumeId/sections/:sectionId/items` | ✅ | Create an item |
+| `GET` | `/api/resumes/:resumeId/sections/:sectionId/items` | ✅ | List section items |
+| `PUT/PATCH` | `/api/resumes/:resumeId/sections/:sectionId/items/:itemId` | ✅ | Update an item |
+| `DELETE` | `/api/resumes/:resumeId/sections/:sectionId/items/:itemId` | ✅ | Delete an item |
 
-  GET               `/api/resumes/:resumeId/sections/:sectionId/items`           ✅                List
+---
 
-  PUT/PATCH         `/api/resumes/:resumeId/sections/:sectionId/items/:itemId`   ✅                Update
+## 🕐 Versions
 
-  DELETE            `/api/resumes/:resumeId/sections/:sectionId/items/:itemId`   ✅                Delete
-  ------------------------------------------------------------------------------------------------------------------
+| Method | Endpoint | Auth | Purpose |
+|---|---|:---:|---|
+| `POST` | `/api/resumes/:resumeId/versions` | ✅ | Create a resume snapshot |
+| `GET` | `/api/resumes/:resumeId/versions` | ✅ | Get version history |
+| `POST` | `/api/resumes/:resumeId/versions/restore` | ✅ | Restore a previous version |
 
-## Versions
+---
 
-  -------------------------------------------------------------------------------------------------
-  Method            Endpoint                                    Auth              Purpose
-  ----------------- ------------------------------------------- ----------------- -----------------
-  POST              `/api/resumes/:resumeId/versions`           ✅                Create snapshot
+## 🎨 Templates
 
-  GET               `/api/resumes/:resumeId/versions`           ✅                Version history
+| Method | Endpoint | Auth | Purpose |
+|---|---|:---:|---|
+| `GET` | `/api/templates` | ❌ | List available templates |
+| `GET` | `/api/templates/:id` | ❌ | Get a specific template |
 
-  POST              `/api/resumes/:resumeId/versions/restore`   ✅                Restore version
-  -------------------------------------------------------------------------------------------------
+---
 
-## Templates
+## 🤖 AI
 
-  Method   Endpoint               Auth   Purpose
-  -------- ---------------------- ------ ----------------
-  GET      `/api/templates`       ❌     List templates
-  GET      `/api/templates/:id`   ❌     Get template
+| Method | Endpoint | Auth | Purpose |
+|---|---|:---:|---|
+| `POST` | `/api/ai/bullets` | ✅ | Generate resume bullet points |
+| `POST` | `/api/ai/summary` | ✅ | Generate a professional summary |
+| `POST` | `/api/ai/rewrite` | ✅ | Rewrite resume content |
+| `POST` | `/api/ai/prompt` | ✅ | Process a general AI prompt |
 
-## AI
+---
 
-  Method   Endpoint            Auth   Purpose
-  -------- ------------------- ------ -------------------
-  POST     `/api/ai/bullets`   ✅     Generate bullets
-  POST     `/api/ai/summary`   ✅     Generate summary
-  POST     `/api/ai/rewrite`   ✅     Rewrite text
-  POST     `/api/ai/prompt`    ✅     General AI action
+## 💼 Applications
 
-## Applications
+| Method | Endpoint | Auth | Purpose |
+|---|---|:---:|---|
+| `POST` | `/api/applications` | ✅ | Create a job application |
+| `GET` | `/api/applications` | ✅ | List the user's applications |
+| `PATCH` | `/api/applications/:id` | ✅ | Update an application |
+| `DELETE` | `/api/applications/:id` | ✅ | Delete an application |
 
-  Method   Endpoint                  Auth   Purpose
-  -------- ------------------------- ------ --------------------------
-  POST     `/api/applications`       ✅     Create application
-  GET      `/api/applications`       ✅     List user's applications
-  PATCH    `/api/applications/:id`   ✅     Update application
-  DELETE   `/api/applications/:id`   ✅     Delete application
+---
 
-> If route names or verbs differ in the final source tree, treat the
-> actual route files as the source of truth.
+### 🔑 Authentication Legend
+
+- ✅ **Protected** — Requires a valid JWT:
+  ```http
+  Authorization: Bearer <JWT>
+  ```
 
 ------------------------------------------------------------------------
 
