@@ -22,6 +22,7 @@ app.use("/api/resumes", require("./routes/sections"));
 app.use("/api/resumes", require("./routes/items"));
 app.use("/api/resumes", require("./routes/versions"));
 app.use("/api/templates", require("./routes/templates"));
+app.use("/api/ai", require("./routes/ai"));
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
